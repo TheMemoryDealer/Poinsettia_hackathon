@@ -1,11 +1,9 @@
-## “Find the colours” Challenge
-The goal of the Find the colours challenge is to find the red and green leaves in the plant and
-compute the ratio of red to green. This could be used to estimate plant maturity, one of the criteria
-for grading poinsettia plants used in nurseries. This is a challenge that could be completed using
-standard image processing methods for colour segmentation or machine learning methods.
+## “Find the pot” Challenge
+The goal of the Find the pot challenge is to locate the pot(s) in which poinsettia are planted in each
+image. 
 
 ### Data set:
-Use the **sea of plants** data set for this challenge.
+Use the **side view data set** for this challenge.
 
 ### Result format 
 Entries should indicate the bounding box of the pot. Results should be provided in a csv file, with

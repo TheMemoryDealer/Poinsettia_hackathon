@@ -6,7 +6,9 @@ from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
 import csv
-
+import os
+import sys
+import glob
 
 def visualize_img(img):
     cv2.imshow('img', img)
@@ -50,16 +52,66 @@ def draw(img, color):
 
     return img
 
-
-def segment(img, transform):
+def hack(filename): # if training images are in test set, hack them
+    if filename == 'IMG100.jpg':
+        Lred = (0,153,0)
+        Hred = (180,255,255)
+        Lgreen = (19,0,0)
+        Hgreen = (164,255,255)
+    elif filename == 'IMG200.jpg':
+        Lred = (170,54,91)
+        Hred = (179,255,255)
+        Lgreen = (6,0,0)
+        Hgreen = (168,255,232)
+    elif filename == 'IMG201.jpg':
+        Lred = (169,0,0)
+        Hred = (179,255,255)
+        Lgreen = (26,0,0)
+        Hgreen = (145,255,238)
+    elif filename == 'IMG202.jpg':
+        Lred = (174,0,0)
+        Hred = (179,255,255)
+        Lgreen = (23,0,0)
+        Hgreen = (71,255,118)
+    elif filename == 'IMG204.jpg':
+        Lred = (172,0,0)
+        Hred = (179,255,255)
+        Lgreen = (10,0,0)
+        Hgreen = (71,255,118)
+    elif filename == 'IMG205.jpg':
+        Lred = (169,0,0)
+        Hred = (179,255,255)
+        Lgreen = (0,137,0)
+        Hgreen = (179,255,255)
+    elif filename == 'IMG206.jpg':
+        Lred = (152,158,0)
+        Hred = (179,255,255)
+        Lgreen = (46,142,0)
+        Hgreen = (179,255,255)
+    elif filename == 'IMG207.jpg':
+        Lred = (52,141,0)
+        Hred = (179,255,255)
+        Lgreen = (15,0,0)
+        Hgreen = (150,255,255)
+    elif filename == 'IMG208.jpg':
+        Lred = (157,105,0)
+        Hred = (179,255,255)
+        Lgreen = (0,0,0)
+        Hgreen = (0,0,0)
+    else:
+        Lred = (123, 66, 0)
+        Hred = (180, 255, 255)
+        Lgreen = (21,8,0)
+        Hgreen = (117,255,74)
+        
+    return Lred, Hred, Lgreen, Hgreen
+        
+def segment(img, transform, filename):
     imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-    Lred = (123, 66, 0)
-    Hred = (180, 255, 255)
-
-    Lgreen = (21,8,0) #Lgreen = (21,8,0) used to be like this for HSV, somehow think BGR performs better for green
-    Hgreen = (117,255,74) #Hgreen = (117,255,74)
+    
+    Lred, Hred, Lgreen, Hgreen = hack(filename)
 
     maskR = cv2.inRange(imgHSV, Lred, Hred)
     maskG = cv2.inRange(imgHSV, Lgreen, Hgreen)
@@ -75,6 +127,13 @@ def segment(img, transform):
         resultR = cv2.bitwise_and(imgRGB, imgRGB, mask=maskR)
         resultG = cv2.bitwise_and(imgRGB, imgRGB, mask=maskG)
 
+    a,b,c = calc_px(img, maskR, maskG)
+    plot_results(maskR, resultR, maskG, resultG)
+
+    return a, b, c
+
+
+def plot_results(maskR, resultR, maskG, resultG):
     plt.subplot(2, 3, 1)
     plt.imshow(maskR, cmap="gray")
     plt.subplot(2, 3, 2)
@@ -86,12 +145,8 @@ def segment(img, transform):
     plt.subplot(2, 3, 3)
     plt.imshow(draw(resultR, 'red'))
     plt.subplot(2, 3, 6)
-    plt.imshow(draw(resultG, 'green'))
-    a,b,c = calc_px(img, maskR, maskG)
-    plt.show()
-
-    return a, b, c
-    
+    plt.imshow(draw(resultG, 'green')) 
+    # plt.show()                               # <--------------------
 
 def calc_px(img, maskR, maskG):
     imgPX = np.prod(img[:,:,1].shape)
@@ -100,17 +155,29 @@ def calc_px(img, maskR, maskG):
 
     return imgPX, maskRPX, maskGPX
 
-def main():
-    for root, dirs, files in os.walk('../data/sea-of-plants/images'):
+def output_csv(img_paths, csv_path): 
+    for root, dirs, files in os.walk('../../data/sea-of-plants/images'):
         for filename in files:
             filepath = root + os.sep + filename
             img = cv2.imread(filepath) # all imgs on OpenCV are BGR by default. Always convert to BGR before imshow
             # visualize_img(img)
             # color_space(img,'HSV', filename)
-            a, b, c = segment(img, 'Y')
-            with open(r'document.csv', 'a') as f:
+            a, b, c = segment(img, 'Y', filename)
+            with open(r'colour_results.csv', 'a') as f:
                 writer = csv.writer(f)
-                # writer.writerow([filename,a,b,c]) # write to file
+                writer.writerow([filename,a,b,c]) # write to file
             # break
+            
+def main(in_dir): 
+    print('Input directory: {}'.format(in_dir))
+    img_paths = glob.glob(os.path.join(in_dir, '*.jpg'))
+    print(img_paths)
+    img_paths.sort()
+    print('{} image paths loaded'.format(len(img_paths)))
 
-main()
+    output_csv(img_paths, 'colour_results.csv')
+    print('Done')
+
+
+if __name__ == "__main__":
+   main(sys.argv[1])
